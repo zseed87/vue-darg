@@ -53,8 +53,7 @@
     if (typeof exports == "object") {
         module.exports = Drag;
     } else if (typeof define == "function") {
-        define([], function() {
-            return Drag; });
+        define([], () => Drag);
     } else if (window.Vue) {
         window.vueDrag = Drag;
         Vue.use(Drag);
