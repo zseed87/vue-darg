@@ -1,6 +1,6 @@
 ;(() => {
     //轻触，两次轻触（双击），长按，滑动，滑动结束，左滑动，右滑动，上滑动，下滑动，拖拽，旋转，轻捏（放大/缩小）
-    const EventList = 'tap,doubleTap,longPress,swipe,swipeEnd,swipeLeft,swipeRight,swipeUp,swipeDown,pan,rotate,pinch'.split(',');
+    const EventList = 'tap,longPress,swipe,swipeLeft,swipeRight,swipeUp,swipeDown,pan,rotate,pinch'.split(',');
 
     //判断是否为数字类型
     const isNumber = (num) => {
@@ -71,91 +71,108 @@
 
         //坐标点
         let point = {
-            target: null,           //事件触发DOM节点
-            startStamp: 0,          //事件开始时间戳
-            endStamp: 0,            //事件结束时间戳
-            startApart: 0,          //多点触摸开始触摸间距值
-            endApart: 0,            //多点触摸结束触摸间距值
-            startAngle: 0,          //多点触摸开始触摸角度值
-            endAngle: 0,            //多点触摸结束触摸角度值
-            startX: createPoint(),  //开始触摸 X坐标点
-            startY: createPoint(),  //开始触摸 Y坐标点
-            endX: createPoint(),    //结束触摸 X坐标点
-            endY: createPoint(),    //结束触摸 Y坐标点
-            diffX: createPoint(),   //触摸 X坐标偏移量
-            diffY: createPoint()   //触摸 Y坐标偏移量
+            target: null,               //事件触发DOM节点
+            scale: 0,                   //放大缩小变量
+            angle: 0,                   //变化角度值
+            startX: 0,                  //开始触摸 X坐标点
+            startY: 0,                  //开始触摸 Y坐标点
+            endX: 0,                    //结束触摸 X坐标点
+            endY: 0,                    //结束触摸 Y坐标点
+            left: 0,                    //事件未触发时 DOM节点相对父节点的 X坐标
+            top: 0,                     //事件未触发时 DOM节点相对父节点的 Y坐标
+            width: 0,                   //事件未触发时 DOM节点width值
+            height: 0,                  //事件未触发时 DOM节点height值
+            rotate: 0,                  //事件未触发时 DOM节点rotate值
+            diffX: 0,                   //触摸 X坐标偏移量
+            diffY: 0                    //触摸 Y坐标偏移量
         };
+
+        let startStamp = 0,             //事件结束时间戳
+            endStamp = 0,               //事件开始时间戳
+            startDistance = 0,          //两点触摸开始触摸间距值
+            endDistance = 0,            //两点触摸结束触摸间距值
+            startAngle = 0,             //两点触摸开始触摸角度值
+            endAngle = 0,               //两点触摸结束触摸角度值
+            longPressTimeout = null;    //长按事件定时器
 
         let handler = (e) => {
             point.target = e.target;
-
+            let touch = null,
+                touch2 = null,
+                disX = 0,
+                disY = 0;
             switch(e.type){
                 case 'touchstart':
-                    //重置坐标点信息
-                    point.startX.empty();
-                    point.startY.empty();
-                    point.diffX.empty();
-                    point.diffY.empty();
-
+                    clearTimeout(longPressTimeout);
                     //保存开始坐标点
-                    [...e.touches].forEach((touch, idx) => {
-                        let i = touch.identifier || idx;
-                        point.startX[i] = point.endX[i] = touch.clientX;
-                        point.startY[i] = point.endY[i] = touch.clientY;
-                    });
+                    touch = e.touches[0];
+                    point.startX = touch.clientX;
+                    point.startY = touch.clientY;
+                    point.left = e.target.offsetLeft;
+                    point.top = e.target.offsetTop;
+                    point.width = e.target.offsetWidth;
+                    point.height = e.target.offsetHeight;
+                    point.rotate = +e.target.style['-webkit-transform'].match(/(rotate\(([\-\+]?\d+(\.\d+)?)deg\))/i)[2];
 
-                    //开始时间戳
-                    point.startStamp = point.endStamp = +new Date();
-
-                    //如果是多点触摸则计算开始触摸间距
+                    //如果是两点触摸则计算开始触摸间距、角度
                     if(e.touches.length > 1){
-                        let start_x = point.startX.keys(1) - point.startX.keys(0);
-                        let start_y = point.startY.keys(1) - point.startY.keys(0);
-                        point.startApart = Math.sqrt(start_x * start_x + start_y * start_y);
-                        point.startAngle= getAngle(start_x, start_y);
-                    }
+                        touch2 = e.touches[1];
+                        disX = touch2.clientX - point.startX;
+                        disY = touch2.clientY - point.startY;
+                        startDistance = Math.sqrt(disX * disX + disY * disY);
+                        startAngle = getAngle(disX, disY);
+                    }else{
+                        //开始时间戳
+                        startStamp = +new Date();
 
+                        //长按定时器
+                        longPressTimeout = setTimeout(() => {
+                            node.trigger('longPress', point, e);
+                        }, 800);
+
+                    }
                     break;
                 case 'touchmove':
-                    //移动中的坐标点（结束坐标点）
-                    [...e.touches].forEach((touch, idx) => {
-                        let i = touch.identifier || idx;
-                        point.endX[i] = touch.clientX;
-                        point.endY[i] = touch.clientY;
-                        isNumber(point.startX[i]) && (point.diffX[i] = point.endX[i] - point.startX[i]);
-                        isNumber(point.startY[i]) && (point.diffY[i] = point.endY[i] - point.startY[i]);
-                    });
+                    //保存移动中的坐标点
+                    touch = e.changedTouches[0];
+                    point.endX = touch.clientX;
+                    point.endY = touch.clientY;
+                    point.diffX = point.endX - point.startX;
+                    point.diffY = point.endY - point.startY;
 
-                    //如果是多点触摸则计算移动触摸间距
-                    if(e.touches.length > 1){
-                        let end_x = point.endX.keys(1) - point.endX.keys(0);
-                        let end_y = point.endY.keys(1) - point.endY.keys(0);
-                        point.endApart = Math.sqrt(end_x * end_x + end_y * end_y);
-                        point.endAngle= getAngle(end_x, end_y);
+                    //如果是两点触摸则计算移动触摸间距、角度
+                    if(e.changedTouches.length > 1){
+                        touch2 = e.changedTouches[1];
+                        disX = touch2.clientX - point.endX;
+                        disY = touch2.clientY - point.endY;
+                        endDistance = Math.sqrt(disX * disX + disY * disY);
+                        endAngle= getAngle(disX, disY);
+
+                        point.scale = endDistance / startDistance;
+                        point.angle = endAngle - startAngle;
+
+                        node.trigger('rotate', point, e);
+                        node.trigger('pinch', point, e);
+                    }else{
+                        clearTimeout(longPressTimeout);
+                        node.trigger('pan', point, e);
                     }
-
-                    //触发滑动事件
-                    node.trigger('swipe', point, e);
-
                     break;
                 case 'touchcancel':
                 case 'touchend':
+                    clearTimeout(longPressTimeout);
                     //结束时间戳
-                    point.endStamp = +new Date();
-
-                    //重置结束坐标点
-                    point.endX.empty();
-                    point.endY.empty();
-
+                    endStamp = +new Date();
                     //结束坐标点
-                    [...e.changedTouches].forEach((touch, idx) => {
-                        let i = touch.identifier || idx,
-                            diffX = Math.abs(point.diffX[i]),
-                            diffY = Math.abs(point.diffY[i]),
-                            _diffX = Math.abs(diffX),
-                            _diffY = Math.abs(diffY);
+                    let diffX = point.diffX,
+                        diffY = point.diffY,
+                        _diffX = Math.abs(diffX),
+                        _diffY = Math.abs(diffY);
 
-                        if(_diffX > 0 || _diffY > 0){
+                    //手指和屏幕的接触时间要小于500毫秒
+                    if(endStamp - startStamp < 500){
+                        //手指移动的位移要大于10像素，触发发生滑动事件
+                        if(_diffX > 10 || _diffY > 10){
                             if(_diffX < _diffY && diffY < 0){
                                 //上滑动
                                 node.trigger('swipeUp', point, e);
@@ -169,21 +186,16 @@
                                 //右滑动
                                 node.trigger('swipeRight', point, e);
                             }
-
-                            //滑动结束事件
-                            node.trigger('swipeEnd', point, e);
+                            node.trigger('swipe', point, e);
                         }else{
-                            if(point.endStamp - point.startStamp > 500){
-                                //长按事件
-                                node.trigger('longPress', point, e);
-                            }else{
-                                //轻触事件（点击）
-                                node.trigger('tap', point, e);
-                            }
+                            //手指移动的位移要小于10像素，触发轻触（点击）事件
+                            node.trigger('tap', point, e);
                         }
-                    });
+                    }
+                    //重置坐标点
+                    point.startX = point.startY = point.endX = point.endY = point.diffX = point.diffY = point.offsetLeft = point.offsetTop = 0;
                     break;
-            }
+            };
         };
 
         node.addEventListener('touchstart', handler, false);
@@ -197,7 +209,6 @@
         let event = document.createEvent('HTMLEvents');
         event.initEvent(type, true, true);
         event.data = data || {};
-        event.eventName = type;
         event.target = this;
 
         //取消默认、冒泡事件

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="format-detection" content="telephone=no,email=no">
+<meta name="screen-orientation" content="portrait">
+<meta name="x5-orientation" content="portrait">
+<title>手势</title>
+</head>
+<body>
+<div class="wrap box" id="index">
+    <div id="test" style="position: absolute;left: 0;top: 0;width: 200px;height: 200px;background: #6cf;transform: rotate(0deg);">
+        <div class="abc" style="width: 50px;height: 50px;background: #ccc;">
+
+        </div>
+        <div class="abc" style="width: 50px;height: 50px;background: #356;">
+
+        </div>
+        <div class="abc2" style="width: 50px;height: 50px;background: #ccc;">
+
+        </div>
+    </div>
+
+    <div id="console">
+
+    </div>
+</div>
+
+<script src="./js/touch.js"></script>
+<script type="text/javascript">
+var sss = document.querySelector('#test');
+var c = document.querySelector('#console');
+function handler(e){
+    console.log(e);
+}
+function handler2(e){
+    console.log(2);
+}
+function add(){
+    sss.on('click', '.abc', handler);
+}
+function del(){
+    sss.off('click', handler);
+}
+function add2(){
+    sss.on('click', handler2);
+}
+function del2(){
+    sss.off('click', handler2);
+}
+const EventList = 'tap,longPress,swipe,swipeLeft,swipeRight,swipeUp,swipeDown,pan,rotate,pinch,click'.split(',');
+
+EventList.forEach((type) => {
+    sss.on(type, (e) => {
+        // console.log(e.type, e);
+
+
+        // if(e.type === 'pan'){
+        //     sss.style.left = e.data.left + e.data.diffX + 'px';
+        //     sss.style.top = e.data.top + e.data.diffY + 'px';
+        // }
+
+        // if(e.type === 'pinch'){
+        //     sss.style.width = e.data.scale * e.data.width + 'px';
+        //     sss.style.height = e.data.scale * e.data.height + 'px';
+        // }
+
+        if(e.type === 'rotate'){
+            sss.style['-webkit-transform'] = 'rotate('+ (e.data.rotate + e.data.angle) +'deg)';
+            var p = document.createElement('p');
+            p.innerHTML = 'angel'+ e.data.angle;
+            c.appendChild(p);
+        }
+
+        e.preventDefault();
+        // e.stopPropagation();
+    });
+});
+
+
+</script>
+</body>
+</html>
