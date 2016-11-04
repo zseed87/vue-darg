@@ -149,7 +149,7 @@
                         endAngle= getAngle(disX, disY);
 
                         point.scale = endDistance / startDistance;
-                        point.angle = endAngle - startAngle;
+                        point.angle = startAngle - endAngle;
 
                         node.trigger('rotate', point, e);
                         node.trigger('pinch', point, e);
