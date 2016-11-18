@@ -33,38 +33,6 @@
         return angle;
     };
 
-    const createPoint = () => {
-        return Object.defineProperties({}, {
-            length: {
-                get(){
-                    return Object.keys(this).length;
-                },
-                set(){
-                    return false;
-                },
-                enumerable: false
-            },
-            keys: {
-                value(p){
-                    return this[Object.keys(this)[p]];
-                },
-                writable: false,
-                enumerable: false
-            },
-            empty: {
-                value(){
-                    for(let p in this){
-                        if(this.hasOwnProperty(p)){
-                            delete this[p];
-                        }
-                    }
-                },
-                writable: false,
-                enumerable: false
-            }
-        });
-    };
-
     //定义滑动事件
     const bindEvent = (node) => {
         node.__bind_custom_event__ = true;
